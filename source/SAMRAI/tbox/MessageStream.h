@@ -15,10 +15,26 @@
 
 #include "SAMRAI/tbox/Complex.h"
 #include "SAMRAI/tbox/Utilities.h"
+#include "SAMRAI/tbox/STLAllocator.h"
 
 #include <cstring>
 #include <iostream>
 #include <vector>
+
+#if defined(HAVE_CUDA)
+#include <cuda_runtime_api.h>
+#endif
+
+struct PinnedAllocator
+{
+#if defined(HAVE_CUDA)
+  static inline void *allocate(std::size_t size) { void *ptr; cudaMallocHost(&ptr, size); return ptr; }
+  static inline void deallocate(void *ptr) { cudaFreeHost(ptr); }
+#else
+  static inline void *allocate(std::size_t size) { return std::malloc(size); }
+  static inline void deallocate(void *ptr) { std::free(ptr); }
+#endif
+};
 
 namespace SAMRAI {
 namespace tbox {
@@ -213,6 +229,29 @@ public:
    }
 
    /*!
+    * @brief Returns a pointer into the message stream valid for num_bytes.
+    *
+    * @param[in] num_bytes  Number of bytes requested for window.
+    *
+    * @pre writeMode()
+    */
+   void *
+   directAccess(
+      size_t num_bytes)
+   {
+      if (!growAsNeeded()) {
+         TBOX_ASSERT(canCopyIn(num_bytes));
+      }
+      d_write_buffer.resize(d_write_buffer.size() + num_bytes);
+      d_buffer_size = d_write_buffer.size();
+      void *buffer = static_cast<void *>(
+         d_write_buffer.data() + d_buffer_index
+         );
+      d_buffer_index += num_bytes;
+      return buffer;
+   }
+
+   /*!
     * @brief Unpack a single data item from message stream.
     *
     * @param[out] data  Single item of type DATA_TYPE that will be
@@ -367,7 +406,8 @@ private:
    /*!
     * The buffer for the streamed data to be written.
     */
-   std::vector<char> d_write_buffer;
+   // std::vector< char > d_write_buffer;
+   std::vector< char, STLAllocator<char, PinnedAllocator> > d_write_buffer;
 
    /*!
     * @brief Pointer to the externally supplied memory to read from in
