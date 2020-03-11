@@ -64,13 +64,23 @@ set_target_properties(euler PROPERTIES LINKER_LANGUAGE CXX)
 
 file (GLOB test_inputs ${CMAKE_CURRENT_SOURCE_DIR}/test_inputs/*.input)
 file (GLOB test_baselines ${CMAKE_CURRENT_SOURCE_DIR}/test_inputs/*boxes*)
-
 execute_process(COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/test_inputs)
-execute_process(COMMAND ln -s ${test_baselines} ${CMAKE_CURRENT_BINARY_DIR}/test_inputs)
+execute_process(COMMAND ln -f -s ${test_baselines} ${CMAKE_CURRENT_BINARY_DIR}/test_inputs)
+message(STATUS ${CMAKE_CURRENT_BINARY_DIR})
+
+set(perf_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../performance/Euler/performance_inputs/mEuler)
+
+message(STATUS "CMAKE_SOURCE_DIR Euler Performance: ${perf_dir}") 
+
+file (GLOB performance_inputs ${perf_dir}/*.input)
+message(STATUS ${performance_inputs})
+execute_process(COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/performance_inputs)
+execute_process(COMMAND ln -f -s ${test_baselines} ${CMAKE_CURRENT_BINARY_DIR}/performance_inputs)
 
 samrai_add_tests(
   NAME euler
   EXECUTABLE euler
   INPUTS ${test_inputs}
+  INPUTS ${performance_inputs}
   PARALLEL TRUE)
 
