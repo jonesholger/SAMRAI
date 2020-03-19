@@ -104,7 +104,7 @@ int AutoTester::evalTestData(
       /*
        * set precision of output stream.
        */
-      tbox::plog.precision(12);
+      tbox::plog.precision(14);
 
       /*
        * determine level.

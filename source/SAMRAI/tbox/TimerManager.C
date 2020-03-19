@@ -721,6 +721,7 @@ TimerManager::print(
 {
 #ifdef ENABLE_SAMRAI_TIMERS
    const SAMRAI_MPI& mpi(SAMRAI_MPI::getSAMRAIWorld());
+
    /*
     * There are 18 possible timer values that users may wish to look at.
     * (i.e. User/sys/wallclock time, Total or Exclusive, for individual
@@ -1747,6 +1748,9 @@ TimerManager::checkConsistencyAcrossProcessors()
       int i = static_cast<int>(d_timers.size());
       mpi.Allreduce(&i, &max_num_timers, 1, MPI_INT, MPI_MAX);
    }
+   if(max_num_timers == 0) {
+      return;
+   }
 
    std::vector<int> max_timer_lengths(max_num_timers);
    std::vector<int> rank_of_max(max_num_timers, mpi.getRank());
@@ -1819,6 +1823,8 @@ TimerManager::checkConsistencyAcrossProcessors()
     * It is possible to compare the MD5 sum of the strings,
     * but that may make SAMRAI dependent on the MD5 library.
     */
+
+
 #endif // ENABLE_SAMRAI_TIMERS
 }
 
